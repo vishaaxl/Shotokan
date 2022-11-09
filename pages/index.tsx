@@ -87,9 +87,8 @@ const PageWrapper = styled.main`
 
   display: flex;
   align-items: center;
-  min-height: 100vh;
-  height: fit-content;
-  overflow: scroll;
+  position: fixed;
+  inset: 0;
 `;
 
 const ContentWrapper = styled.div`
