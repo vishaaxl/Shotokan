@@ -101,7 +101,7 @@ const ContentWrapper = styled.div`
   width: 95%;
   max-width: 80rem;
   max-height: 90vh;
-  margin: 0 auto;
+  margin: auto auto;
 
   display: grid;
   justify-items: center;
