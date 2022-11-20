@@ -2,8 +2,10 @@ import Head from "next/head";
 
 import ColumnLayout from "components/ColumnLayout";
 import JudgePersonalForm from "components/personal/Judge";
+import { useRouter } from "next/router";
 
 export default function Coach() {
+  const router = useRouter();
   return (
     <>
       <Head>
@@ -13,7 +15,7 @@ export default function Coach() {
       </Head>
 
       <ColumnLayout>
-        <JudgePersonalForm />
+        <JudgePersonalForm uid={router.query.uid} />
       </ColumnLayout>
     </>
   );

@@ -2,8 +2,11 @@ import Head from "next/head";
 
 import ColumnLayout from "components/ColumnLayout";
 import StudentPersonalForm from "components/personal/Student";
+import { useRouter } from "next/router";
 
 export default function Student() {
+  const router = useRouter();
+
   return (
     <>
       <Head>
@@ -13,7 +16,7 @@ export default function Student() {
       </Head>
 
       <ColumnLayout>
-        <StudentPersonalForm />
+        <StudentPersonalForm uid={router.query.uid} />
       </ColumnLayout>
     </>
   );

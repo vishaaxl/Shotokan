@@ -2,8 +2,10 @@ import Head from "next/head";
 
 import ColumnLayout from "components/ColumnLayout";
 import CoachPersonalForm from "components/personal/Coach";
+import { useRouter } from "next/router";
 
 export default function Coach() {
+  const router = useRouter();
   return (
     <>
       <Head>
@@ -13,7 +15,7 @@ export default function Coach() {
       </Head>
 
       <ColumnLayout>
-        <CoachPersonalForm />
+        <CoachPersonalForm uid={router.query.uid} />
       </ColumnLayout>
     </>
   );

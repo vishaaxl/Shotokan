@@ -1,8 +1,13 @@
-import Image from "next/image";
+import * as Yup from "yup";
 import styled from "styled-components";
 import { Formik, Form, Field } from "formik";
 
 import Input from "./Input";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth, db } from "firebase.config";
+import { useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { useRouter } from "next/router";
 
 interface Props {}
 
@@ -15,6 +20,12 @@ const Container = styled.div`
     span {
       color: ${({ theme }) => theme.blue};
     }
+  }
+
+  .error {
+    margin-bottom: 0.75rem;
+    color: ${({ theme }) => theme.red};
+    font-size: 0.9rem;
   }
 
   .fade {
@@ -64,6 +75,10 @@ const Button = styled.button`
   color: ${({ theme }) => theme.primary};
   border: none;
   border-radius: 5px;
+
+  &: disabled {
+    opacity: 0.5;
+  } ;
 `;
 
 const Forgot = styled.span`
@@ -71,6 +86,20 @@ const Forgot = styled.span`
 `;
 
 const Login: React.FC<Props> = () => {
+  const [formState, setFormState] = useState({
+    error: "",
+    loading: false,
+  });
+
+  const router = useRouter();
+
+  const checkUser = async (uid: string) => {
+    const docRef = doc(db, "users", uid);
+    const docSnap = await getDoc(docRef);
+
+    return docSnap.data();
+  };
+
   return (
     <Container>
       <h1>
@@ -80,18 +109,62 @@ const Login: React.FC<Props> = () => {
       <Formik
         enableReinitialize
         initialValues={{
-          firstname: "",
-          lastname: "",
           email: "",
-          phoneNumber: "",
           password: "",
-          confirmpassword: "",
         }}
-        onSubmit={(values) => {
-          alert("**Invalid Credentials, Please try again");
+        validationSchema={Yup.object().shape({
+          email: Yup.string().email().required("Required"),
+          password: Yup.string().required("Required"),
+        })}
+        onSubmit={async (values) => {
+          setFormState((prev) => ({
+            ...prev,
+            loading: true,
+          }));
+
+          // sign in user
+          signInWithEmailAndPassword(auth, values.email, values.password)
+            .then(async ({ user }) => {
+              if (!user) {
+                setFormState((prev) => ({
+                  error: "No user found",
+                  loading: false,
+                }));
+                return;
+              }
+
+              const userData = await checkUser(user.uid);
+
+              // check payment status
+              if (!userData?.payment) {
+                signOut(auth).then(() => {
+                  router.push({
+                    pathname: `/complete-registration/${userData?.role}`,
+                    query: { uid: user.uid },
+                  });
+                });
+                return;
+              }
+
+              // user is present and payement is verified
+              router.push(`/dashboard/${user.uid}`);
+
+              setFormState((prev) => ({
+                ...prev,
+                loading: false,
+              }));
+            })
+            .catch((err) => {
+              console.log(err);
+              setFormState((prev) => ({
+                error: err.message,
+                loading: false,
+              }));
+            });
         }}
       >
         <Form>
+          {formState.error && <div className="error">**{formState.error}</div>}
           <Input placeholder="E-mail Address" type="email" name="email" />
 
           <Input placeholder="Password" type="password" name="password" />
@@ -113,7 +186,9 @@ const Login: React.FC<Props> = () => {
             <Forgot>Forgot Password?</Forgot>
           </div>
 
-          <Button>Log in</Button>
+          <Button disabled={formState.loading}>
+            {formState.loading ? "Logging in" : "Log in"}
+          </Button>
         </Form>
       </Formik>
     </Container>

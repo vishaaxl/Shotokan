@@ -2,8 +2,11 @@ import Head from "next/head";
 
 import ColumnLayout from "components/ColumnLayout";
 import BlackbeltPersonalForm from "components/personal/Blackbelt";
+import { useRouter } from "next/router";
 
 export default function Coach() {
+  const router = useRouter();
+
   return (
     <>
       <Head>
@@ -13,7 +16,7 @@ export default function Coach() {
       </Head>
 
       <ColumnLayout>
-        <BlackbeltPersonalForm />
+        <BlackbeltPersonalForm uid={router.query.uid} />
       </ColumnLayout>
     </>
   );

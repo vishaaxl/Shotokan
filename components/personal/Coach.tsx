@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { Formik, Form, Field } from "formik";
+import * as Yup from "yup";
 
-import Input from "../Input";
+import Input, { Error } from "../Input";
 import {
   Button,
   Container,
@@ -10,16 +11,55 @@ import {
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { states } from "data/states";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { db, storage } from "firebase.config";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
-interface Props {}
+interface Props {
+  uid: string | string[] | undefined;
+}
 
-const CoachPersonalForm: React.FC<Props> = () => {
+const CoachPersonalForm: React.FC<Props> = ({ uid }) => {
+  const [formState, setFormState] = useState({
+    error: "",
+    loading: false,
+  });
   const [statesData, setStatesData] = useState<any>({});
+  const [profileUrl, setProfileUrl] = useState<string>("");
+
   const router = useRouter();
 
   useEffect(() => {
     setStatesData(states);
   }, []);
+
+  const uploadFile = (
+    file: any,
+    setData: any,
+    callbackfunction: (url: string) => void
+  ) => {
+    if (!file) return;
+
+    const storageRef = ref(storage, `/coaches/${file.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        console.log(progress);
+      },
+      (err) => console.log(err),
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((url) => {
+          setData(url);
+          callbackfunction(url);
+        });
+      }
+    );
+  };
 
   return (
     <Container>
@@ -30,7 +70,7 @@ const CoachPersonalForm: React.FC<Props> = () => {
         height={147}
       />
       <h1>
-        <span>Student</span> Registration
+        <span>Coach</span> Registration
       </h1>
 
       <span className="fade">
@@ -40,22 +80,71 @@ const CoachPersonalForm: React.FC<Props> = () => {
       <Formik
         enableReinitialize
         initialValues={{
-          firstname: "",
-          lastname: "",
-          email: "",
-          phoneNumber: "",
-          password: "",
-          confirmpassword: "",
+          belt: "",
+          dob: "",
+          coach: "",
+          address: "",
           state: "",
+          city: "",
+          pincode: "",
+          photoId: "",
+          privacyConsent: false,
         }}
+        validationSchema={Yup.object().shape({
+          belt: Yup.string().required("Required"),
+          dob: Yup.string().required("Required"),
+          coach: Yup.string().required("Required"),
+          address: Yup.string()
+            .min(10, "Please provide complete address")
+            .required("Required"),
+          state: Yup.string().required("Required"),
+          city: Yup.string().required("Required"),
+          pincode: Yup.number()
+            .typeError("Invalid pin code")
+            .min(100000, "Invalid pin code")
+            .max(999999, "Invalid pin code")
+            .required("Required"),
+          privacyConsent: Yup.boolean().oneOf(
+            [true],
+            "*You must accept the terms and conditions"
+          ),
+        })}
         onSubmit={(values) => {
-          router.push("/complete-registration/finished");
+          setFormState((prev) => ({ ...prev, loading: true }));
+
+          uploadFile(values.photoId, setProfileUrl, (url) => {
+            const docRef = doc(db, "users", uid as string);
+            const { photoId, ...data } = values;
+
+            setDoc(
+              docRef,
+              {
+                ...data,
+                profileUrl: url,
+                createdAt: serverTimestamp(),
+              },
+              { merge: true }
+            )
+              .then(() => {
+                setFormState((prev) => ({ ...prev, loading: false }));
+                router.push("/complete-registration/finished");
+
+                console.log("Registered Successfully");
+              })
+              .catch((err) => {
+                setFormState((prev) => ({
+                  error: "Something went wrong, Please try again later",
+                  loading: false,
+                }));
+                console.log(err);
+              });
+          });
         }}
       >
-        {({ values }) => (
+        {({ values, errors, touched }) => (
           <Form>
             <TwoColumn>
-              <Input placeholder="Select Belt" name="email" component="select">
+              <Input placeholder="Select Belt" name="belt" component="select">
                 <option value="White">White</option>
                 <option value="Yellow">Yellow</option>
                 <option value="Orange">Orange</option>
@@ -74,11 +163,7 @@ const CoachPersonalForm: React.FC<Props> = () => {
                 <option value="Black 6th Dan">Black 6th Dan</option>
                 <option value="Black 7th Dan">Black 7th Dan</option>
               </Input>
-              <Input
-                placeholder="Date of Birth"
-                name="dateOfBirth"
-                type="date"
-              />
+              <Input placeholder="Date of Birth" name="dob" type="date" />
             </TwoColumn>
 
             <Input placeholder="Coach Name" name="coach" />
@@ -112,7 +197,7 @@ const CoachPersonalForm: React.FC<Props> = () => {
                 </Input>
               </TwoColumn>
             </TwoColumn>
-            <Input placeholder="Area Pin Code" name="AreaPinCode" />
+            <Input placeholder="Area Pin Code" name="pincode" />
             <Input placeholder="Upload Photo id" name="photoId" type="file" />
 
             <label htmlFor="privacy-consent" className="privacy-consent">
@@ -123,9 +208,12 @@ const CoachPersonalForm: React.FC<Props> = () => {
               />
               I agree to all the <span>Term of conditions</span> &{" "}
               <span>Privacy Policy</span>
+              {touched.privacyConsent && errors.privacyConsent ? (
+                <Error className="error">{errors.privacyConsent}</Error>
+              ) : null}
             </label>
 
-            <Button>Pay Fees</Button>
+            <Button disabled={formState.loading}>Pay Fees</Button>
             <div className="register">
               Already have an account?
               <span>Log in</span>

@@ -46,7 +46,7 @@ const Input: React.FC<Props> = ({
   );
 };
 
-const Error = styled.div`
+export const Error = styled.div`
   margin-top: 0.5rem;
   color: red;
   font-size: 0.75rem;
