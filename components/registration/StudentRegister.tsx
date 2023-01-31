@@ -11,6 +11,7 @@ import { auth, db } from "firebase.config";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { Error } from "components/Input";
+import Link from "next/link";
 
 interface Props {}
 
@@ -251,7 +252,9 @@ const StudentRegister: React.FC<Props> = () => {
             <Button disabled={formState.loading}>Next</Button>
             <div className="register">
               Already have an account?
-              <span>Log In</span>
+              <Link href="/">
+                <span>Log In</span>
+              </Link>
             </div>
           </Form>
         )}

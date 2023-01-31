@@ -97,7 +97,6 @@ const StudentPersonalForm: React.FC<Props> = ({ uid }) => {
             .min(10, "Please provide complete address")
             .required("Required"),
           state: Yup.string().required("Required"),
-          city: Yup.string().required("Required"),
           pincode: Yup.number()
             .typeError("Invalid pin code")
             .min(100000, "Invalid pin code")
@@ -119,6 +118,9 @@ const StudentPersonalForm: React.FC<Props> = ({ uid }) => {
               docRef,
               {
                 ...data,
+                city:
+                  values.city ||
+                  statesData[values.state as keyof typeof statesData][0],
                 profileUrl: url,
 
                 createdAt: serverTimestamp(),

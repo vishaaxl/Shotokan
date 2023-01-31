@@ -5,6 +5,11 @@ import { DocumentData } from "firebase/firestore";
 import Image from "next/image";
 import styled from "styled-components";
 import moment from "moment";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
+import { generateUid } from "utils/main";
+import { useRef } from "react";
 
 interface Props {
   data: DocumentData;
@@ -123,9 +128,20 @@ const MainWrapper = styled.div`
 `;
 
 const IdCard: React.FC<Props> = ({ data }) => {
+  const idCardRef = useRef(null);
+  const generatePdf = () => {
+    // @ts-ignore
+    html2canvas(idCardRef.current).then((canvas) => {
+      const img = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "pt", "a3");
+      pdf.addImage(img, "JPEG", 0, 0, 595, 842);
+      pdf.save(generateUid(data.createdAt?.seconds * 1000, data.id));
+    });
+  };
+
   return (
     <MainWrapper>
-      <CardWrapper>
+      <CardWrapper ref={idCardRef}>
         <TopSection>
           <span></span>
           <p>
@@ -182,7 +198,9 @@ const IdCard: React.FC<Props> = ({ data }) => {
           </div>
         </MainSection>
         <BottomSection>
-          <h2>WMSKF ID No. {data.id}</h2>
+          <h2>
+            WMSKF ID No. {generateUid(data.createdAt.seconds * 1000, data.id)}
+          </h2>
           <span>
             Date of expriry:{" "}
             {moment(data.createdAt.seconds * 1000).format("MMM Do YY")}
@@ -196,7 +214,7 @@ const IdCard: React.FC<Props> = ({ data }) => {
         </BottomSection>
       </CardWrapper>
       <div className="button">
-        <Button>Download ID Card</Button>
+        <Button onClick={generatePdf}>Download ID Card</Button>
       </div>
     </MainWrapper>
   );

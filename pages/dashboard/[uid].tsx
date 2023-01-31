@@ -10,6 +10,8 @@ import { useAuth } from "context/User";
 import { GetServerSideProps } from "next";
 import { doc, DocumentData, getDoc } from "firebase/firestore";
 import { db } from "firebase.config";
+import moment from "moment";
+import Events from "components/dashboard/Events";
 
 const Container = styled.main`
   width: 90%;
@@ -60,6 +62,8 @@ export default function Home({ data }: DocumentData) {
   const user = useAuth();
   data = JSON.parse(data);
 
+  const router = useRouter();
+
   if (!user) {
     return <div></div>;
   }
@@ -73,7 +77,7 @@ export default function Home({ data }: DocumentData) {
       </Head>
       <Container>
         <header>
-          <div className="image">
+          <div className="image" onClick={() => router.push("/")}>
             <Image
               src="/images/logo.png"
               alt="Image of guys practicing karate"
@@ -83,14 +87,14 @@ export default function Home({ data }: DocumentData) {
           </div>
           <div className="content">
             <h1>Welcome to WMSKF Portal , Vishal</h1>
-            <span>Tue, 07 June 2022</span>
+            <span>{moment(new Date()).format("MMM Do YYYY")}</span>
           </div>
         </header>
 
         <TopSection>
           <PersonalInfo data={data} />
           <About data={data} />
-          <div></div>
+          <Events data={data} />
           <IdCard data={data} />
         </TopSection>
       </Container>

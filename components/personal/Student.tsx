@@ -15,6 +15,7 @@ import { states } from "data/states";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { db, storage } from "firebase.config";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import Link from "next/link";
 
 interface Props {
   uid: string | string[] | undefined;
@@ -81,7 +82,7 @@ const StudentPersonalForm: React.FC<Props> = ({ uid }) => {
       <Formik
         enableReinitialize
         initialValues={{
-          belt: "",
+          belt: "white",
           dob: "",
           coach: "",
           address: "",
@@ -99,7 +100,6 @@ const StudentPersonalForm: React.FC<Props> = ({ uid }) => {
             .min(10, "Please provide complete address")
             .required("Required"),
           state: Yup.string().required("Required"),
-          city: Yup.string().required("Required"),
           pincode: Yup.number()
             .typeError("Invalid pin code")
             .min(100000, "Invalid pin code")
@@ -119,7 +119,14 @@ const StudentPersonalForm: React.FC<Props> = ({ uid }) => {
 
             setDoc(
               docRef,
-              { ...data, profileUrl: url, createdAt: serverTimestamp() },
+              {
+                ...data,
+                city:
+                  values.city ||
+                  statesData[values.state as keyof typeof statesData][0],
+                profileUrl: url,
+                createdAt: serverTimestamp(),
+              },
               { merge: true }
             )
               .then(() => {
@@ -221,7 +228,9 @@ const StudentPersonalForm: React.FC<Props> = ({ uid }) => {
             <Button disabled={formState.loading}>Pay Fees</Button>
             <div className="register">
               Already have an account?
-              <span>Log in</span>
+              <Link href="/">
+                <span>Log in</span>
+              </Link>
             </div>
           </Form>
         )}
